@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Fluffy Bird Enhanced</title>
+  <style>
+    body { margin: 0; font-family: Arial; text-align: center; background: #70c5ce; }
+    canvas { display: none; margin: auto; background: #70c5ce; }
+    #menu { padding-top: 100px; }
+    .level {
+      display: inline-block;
+      width: 100px;
+      height: 100px;
+      margin: 10px;
+      background: white;
+      line-height: 100px;
+      font-size: 20px;
+      cursor: pointer;
+      border-radius: 10px;
+      transition: 0.2s;
+    }
+    .level:hover { background: #ddd; }
+  </style>
+</head>
+<body>
+
+<div id="menu">
+  <h1>Fluffy Bird</h1>
+  <p>Pilih Level:</p>
+  <div class="level" onclick="startGame(1)">1</div>
+  <div class="level" onclick="startGame(2)">2</div>
+  <div class="level" onclick="startGame(3)">3</div>
+</div>
+
+<canvas id="gameCanvas" width="400" height="600"></canvas>
+
+<script>
+let canvas = document.getElementById("gameCanvas");
+let ctx = canvas.getContext("2d");
+
+let bird, pipes, score, gravity, gap, speed, gameOver;
+let bgX = 0;
+
+// Gunakan sprite dari internet (bisa kamu ganti dengan punyamu di GitHub)
+let birdImg = new Image();
+birdImg.src = "https://i.imgur.com/QZ6XK0k.png"; // sprite burung
+
+let bgImg = new Image();
+bgImg.src = "https://i.imgur.com/3e5pQ7L.png"; // background
+
+function startGame(level) {
+  document.getElementById("menu").style.display = "none";
+  canvas.style.display = "block";
+
+  bird = { x: 50, y: 150, width: 34, height: 24, velocity: 0 };
+  pipes = [];
+  score = 0;
+  gameOver = false;
+  bgX = 0;
+
+  if (level === 1) { gravity = 0.4; gap = 150; speed = 2; }
+  if (level === 2) { gravity = 0.5; gap = 120; speed = 3; }
+  if (level === 3) { gravity = 0.6; gap = 100; speed = 4; }
+
+  document.addEventListener("keydown", flap);
+  loop();
+}
+
+function flap() {
+  bird.velocity = -6;
+}
+
+function drawBackground() {
+  bgX -= speed / 2;
+  if (bgX <= -canvas.width) bgX = 0;
+
+  ctx.drawImage(bgImg, bgX, 0, canvas.width, canvas.height);
+  ctx.drawImage(bgImg, bgX + canvas.width, 0, canvas.width, canvas.height);
+}
+
+function loop() {
+  if (gameOver) return;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Background bergerak
+  drawBackground();
+
+  // Bird
+  bird.velocity += gravity;
+  bird.y += bird.velocity;
+  ctx.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
+
+  // Pipes
+  if (pipes.length === 0 || pipes[pipes.length - 1].x < 250) {
+    let top = Math.random() * 300 + 50;
+    pipes.push({ x: 400, top: top, passed: false });
+  }
+
+  pipes.forEach((p) => {
+    p.x -= speed;
+
+    ctx.fillStyle = "green";
+    ctx.fillRect(p.x, 0, 40, p.top);
+    ctx.fillRect(p.x, p.top + gap, 40, canvas.height);
+
+    // Collision
+    if (
+      bird.x < p.x + 40 &&
+      bird.x + bird.width > p.x &&
+      (bird.y < p.top || bird.y + bird.height > p.top + gap)
+    ) {
+      endGame();
+    }
+
+    // Score lebih akurat
+    if (!p.passed && p.x + 40 < bird.x) {
+      score++;
+      p.passed = true;
+    }
+  });
+
+  // Ground collision
+  if (bird.y + bird.height > canvas.height || bird.y < 0) {
+    endGame();
+  }
+
+  // Score
+  ctx.fillStyle = "black";
+  ctx.font = "24px Arial";
+  ctx.fillText("Score: " + score, 10, 30);
+
+  requestAnimationFrame(loop);
+}
+
+function endGame() {
+  gameOver = true;
+  alert("Game Over! Score: " + score);
+  location.reload();
+}
+</script>
+
+</body>
+</html>
